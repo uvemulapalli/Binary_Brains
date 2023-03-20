@@ -5,8 +5,5 @@ class Range(object):
 	    self.end = end
 	    self.interval = interval
 	    
-    def toString(self):
-	    print("From",self.begin,"To=",self.end,"Interval=",self.interval)
-
-B = Range(100,200,5)
-B.toString()
+    def display(self):
+	    print("From",self.begin,"To=",self.end,"Interval=",self.interval);
