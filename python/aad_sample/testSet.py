@@ -31,7 +31,7 @@ def generate_test():
         # extract expiry month
             #expirymonth = 0.5
             bs: BlackScholes = BlackScholes(volatility,1,expiry,spotprice)
-            xTrain, ytrain, dx_dyTrain =  bs.testSet(bs,spotprice-10,spotprice+10)
+            xTrain, ytrain, dx_dyTrain = bs.testSet(bs,spotprice-10,spotprice+10)
         #save to csv for now
             writer.writerow([xTrain,ytrain,dx_dyTrain])
     return
