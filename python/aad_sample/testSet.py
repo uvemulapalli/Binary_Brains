@@ -10,12 +10,12 @@ sizes = [1024, 8192]
 # the associated function.
 
 
-@app.route('/generate_training', methods=['POST'])
+@app.route('/generate_test', methods=['POST'])
 # ‘/’ URL is bound with hello_world() function.
-def generate_training():
+def generate_test():
     # read csv file
     filefromreq = request.form['filename']
-    with open('training.csv', 'w', newline='') as writefile:
+    with open('testing.csv', 'w', newline='') as writefile:
         writer = csv.writer(writefile)
         writer.writerow(["Instrument", "xTrain", "yTrain", "dx_dyTrain"])
     with open(filefromreq) as readfile:
@@ -23,15 +23,15 @@ def generate_training():
         for row in reader:
             print("row", row)
             insticker = row.__getattribute__('InstrumentTicker')
-            strikeprice =  row.__getattribute__('StrikePrice')
-            expiry =  row.__getattribute__('Expiry')
-            spotprice =  row.__getattribute__('SpotPrice')
+            strikeprice = row.__getattribute__('StrikePrice')
+            expiry = row.__getattribute__('Expiry')
+            spotprice = row.__getattribute__('SpotPrice')
             volatility = row.__getattribute__('Volatality')
             key = insticker
         # extract expiry month
             #expirymonth = 0.5
-            bs: BlackScholes = BlackScholes(volatility , 1 , expiry , spotprice)
-            xTrain, ytrain, dx_dyTrain =  bs.trainingSet(bs,max[sizes])
+            bs: BlackScholes = BlackScholes(volatility,1,expiry,spotprice)
+            xTrain, ytrain, dx_dyTrain =  bs.testSet(bs,spotprice-10,spotprice+10)
         #save to csv for now
             writer.writerow([xTrain,ytrain,dx_dyTrain])
     return
