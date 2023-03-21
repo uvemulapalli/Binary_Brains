@@ -62,6 +62,20 @@ class BlackScholes:
         self.K = K
         self.volMult = volMult
 
+        def __init__(self,
+                     vol=0.2,
+                     T1=1,
+                     T2=2,
+                     K=1.10,
+                     volMult=1.5,
+                     spot=1):
+            self.spot = spot
+            self.vol = vol
+            self.T1 = T1
+            self.T2 = T2
+            self.K = K
+            self.volMult = volMult
+
     # training set: returns S1 (mx1), C2 (mx1) and dC2/dS1 (mx1)
     def trainingSet(self, m, anti=True, seed=None):
 
