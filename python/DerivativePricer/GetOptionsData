@@ -58,7 +58,7 @@ f = open(json_file,'w');
 f.write(contents);
 f.close();
 
-myclient = MongoClient("mongodb://localhost:27017")
+myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/")
   
 # database & collection
 db = myclient["TradeData"];
@@ -76,3 +76,5 @@ if isinstance(data, list):
     Collection.insert_many(data) 
 else:
     Collection.insert_one(data);
+
+print(Collection.name);
