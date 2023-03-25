@@ -1,24 +1,8 @@
 
-# import and test
-import tensorflow as tf2
-
-print("TF version =", tf2.__version__)
-
-# we want TF 2.x
-assert tf2.__version__ >= "2.0"
-
-# disable eager execution etc
-tf = tf2.compat.v1
-tf.disable_eager_execution()
-
-# disable annoying warnings
-tf.logging.set_verbosity(tf.logging.ERROR)
 import warnings
 
 warnings.filterwarnings('ignore')
 
-# make sure we have GPU support
-print("GPU support = ", tf.test.is_gpu_available())
 
 # import other useful libs
 import numpy as np
@@ -62,13 +46,14 @@ class BlackScholes:
         self.K = K
         self.volMult = volMult
 
-        def __init__(self,
-                     vol=0.2,
-                     T1=1,
-                     T2=2,
-                     K=1.10,
-                     volMult=1.5,
-                     spot=1):
+    def __init__(self,
+                  vol=0.2,
+                  T1=1,
+                  T2=2,
+                  K=1.10,
+                  spot=1.0,
+                  volMult=1.5):
+
             self.spot = spot
             self.vol = vol
             self.T1 = T1

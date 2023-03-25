@@ -18,34 +18,6 @@ redis_host = "a8216942522c.mylabserver.com"
 redis_port = 8095
 myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/")
 
-@app.route('/train/GetTrainingSetForInstrument', methods=['GET'])
-def GetTrainingSetForGivenInstrument():
-        request_data = request.get_json()
-        instrumentId , strikePrice, expiryInYears, spotPrice, volatality =  getRequestParam(request_data)
-        response = getRawResponse()
-        #connecting to Redis cache
-        print('conecting to Redis')
-        r = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
-        if(trainingSetExists(instrumentId,r)):
-           print('training set exists')
-           trainingSetDict  = r.get(instrumentId)
-           sub_response = {}
-           sub_response['instrumentId'] = instrumentId
-           sub_response['training_data'] = trainingSetDict
-           response["data"].append(sub_response)
-           return jsonify(response)
-        else:
-           xTrain,yTrain,dydxTrain = generateTrainingData(instrumentId,spotPrice,strikePrice, volatality, expiryInYears)
-           model_training_data = np.concatenate((xTrain, yTrain, dydxTrain), axis=1)
-           df = pd.DataFrame(model_training_data, columns=['spot', 'price', 'differential'])
-           trainingSetDict= df.to_dict(orient="records")
-           r.__setitem__(instrumentId,trainingSetDict)
-           sub_response = {}
-           sub_response['instrumentId'] = instrumentId
-           sub_response['training_data'] = trainingSetDict
-           response["data"].append(sub_response)
-           return jsonify(response)
-
 @app.route('/train/PersistTrainingSetForInstruments', methods=['POST'])
 def PersistTrainingSetForInstruments():
         #connecting to Mongo db
@@ -87,34 +59,59 @@ def GetTrainingSetForGivenInstruments():
         # connecting to Redis cache
         print('conecting to Redis')
         r = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
-      #  r.delete(instrumentId)
-        if (trainingSetExists(instrumentId, r)):
-            print('training set exists')
-            trainingSetDict = r.get(instrumentId)
-            sub_response = {}
-            sub_response['instrumentId'] = instrumentId
-            sub_response['training_data'] = json.loads(trainingSetDict)
-            response["data"].append(sub_response)
-            continue
-        else:
-            xTrain, yTrain, dydxTrain = generateTrainingData(instrumentId, spotPrice, strikePrice, volatality,
-                                                       expiryInYears)
-            model_training_data = np.concatenate((xTrain, yTrain, dydxTrain), axis=1)
-            df = pd.DataFrame(model_training_data, columns=['spot', 'price', 'differential'])
-            trainingSetDict = df.to_dict(orient="records")
-            r.__setitem__(instrumentId, json.dumps(trainingSetDict))
-            sub_response = {}
-            sub_response['instrumentId'] = instrumentId
-            sub_response['training_data'] = trainingSetDict
-            response["data"].append(sub_response)
-            continue
-
+       #r.delete(instrumentId)
+        try:
+            if (trainingSetExists(instrumentId, r)):
+                print('training set exists')
+                trainingSetDict = r.get(instrumentId)
+                sub_response = {}
+                sub_response['instrumentId'] = instrumentId
+                sub_response['training_data'] = json.loads(trainingSetDict)
+                response["data"].append(sub_response)
+                continue
+            else:
+                xTrain, yTrain, dydxTrain = generateTrainingData(instrumentId, spotPrice, strikePrice, volatality,
+                                                           expiryInYears)
+                model_training_data = np.concatenate((xTrain, yTrain, dydxTrain), axis=1)
+                df = pd.DataFrame(model_training_data, columns=['spot', 'price', 'differential'])
+                trainingSetDict = df.to_dict(orient="records")
+                try:
+                    r.__setitem__(instrumentId, json.dumps(trainingSetDict))
+                except:
+                    print("redis not available")
+                sub_response = {}
+                sub_response['instrumentId'] = instrumentId
+                sub_response['training_data'] = trainingSetDict
+                response["data"].append(sub_response)
+                continue
+        except:
+                 xTrain, yTrain, dydxTrain = generateTrainingData(instrumentId, spotPrice, strikePrice, volatality,
+                                                                 expiryInYears)
+                 model_training_data = np.concatenate((xTrain, yTrain, dydxTrain), axis=1)
+                 df = pd.DataFrame(model_training_data, columns=['spot', 'price', 'differential'])
+                 trainingSetDict = df.to_dict(orient="records")
+                 try:
+                    r.__setitem__(instrumentId, json.dumps(trainingSetDict))
+                 except:
+                    print("redis not available")
+                 sub_response = {}
+                 sub_response['instrumentId'] = instrumentId
+                 sub_response['training_data'] = trainingSetDict
+                 response["data"].append(sub_response)
+                 continue
     return jsonify(response )
 
 def generateTrainingData(instrumentId,spotPrice,strikePrice,volatality,expiryInYears):
     generator = BlackScholes()
     generator.__init__(spot=(spotPrice), K=(strikePrice), vol=volatality, T2=(1 + expiryInYears))
     xTrain, yTrain, dydxTrain = generator.trainingSet(size)
+    return xTrain, yTrain, dydxTrain
+def generateTestData(instrumentId,spotPrice,strikePrice,volatality,expiryInYears):
+    generator = BlackScholes()
+    generator.__init__(spot=(spotPrice), K=(strikePrice), vol=volatality, T2=(1 + expiryInYears))
+    lowerBound = ( spotPrice - (spotPrice * 0.05) )
+    upperBound = ( spotPrice + (spotPrice * 0.05) )
+    xTrain, yTrain, dydxTrain = generator.testSet(lowerBound,upperBound)
     return xTrain, yTrain, dydxTrain
 
 def getRawResponse():
@@ -141,9 +138,29 @@ def populateModelCache(instrumentId, model):
 def trainingSetExists(instrumentId, r):
     return True if r.get(instrumentId) else False
 
+@app.route('/train/generateTestSet', methods=['POST'])
+
+def generateTestSet():
+    instrumentList = request.get_json()
+    response = getRawResponse()
+    seed = np.random.randint(0, 10000)
+    for item in instrumentList:
+        instrumentId, strikePrice, expiryInYears, spotPrice, volatality = getRequestParam(item)
+        # connecting to Redis cache
+        xTrain, yTrain, dydxTrain = generateTestData(instrumentId, spotPrice, strikePrice, volatality,
+                                                             expiryInYears)
+        model_training_data = np.concatenate((xTrain, yTrain, dydxTrain), axis=1)
+        df = pd.DataFrame(model_training_data, columns=['spot', 'spot', 'simulatedPrice'])
+        trainingSetDict = df.to_dict(orient="records")
+        sub_response = {}
+        sub_response['instrumentId'] = instrumentId
+        sub_response['test_data'] = trainingSetDict
+        response["data"].append(sub_response)
+    return jsonify(response)
+
 def main():
     response_API = requests.post('http://127.0.0.1:5000/train/PersistTrainingSetForInstruments')
     print(response_API.status_code)
 if __name__ == '__main__':
   #  main()
-    app.run(debug=True)
+  app.run(host='0.0.0.0', port=5000)
