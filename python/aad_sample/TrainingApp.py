@@ -13,7 +13,7 @@ from datetime import datetime
 
 app = Flask("Training Application")
 instrumentModelMap = {}
-size = 8192
+size = 1024
 redis_host = "a8216942522c.mylabserver.com"
 redis_port = 8095
 myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/")
