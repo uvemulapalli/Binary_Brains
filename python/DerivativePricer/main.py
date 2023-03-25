@@ -1,38 +1,43 @@
-fimport yfinance as yf
+import yfinance as yf
 import pandas as pd
 import json
 from pymongo import MongoClient;
+#from flask import Flask, jsonify;
+
+#app = Flask('Options')
+
+#@app.route('/home/<string:symbol>', methods = ['GET'])
+#def getMarketPrice(symbol):
+#    price =  yf.Ticker.fast_info.lastTradeDate
+#    return jsonify({'marketPrice': price})
 
 
 def options_chain(symbol):
 
-    tk = yf.Ticker(symbol)
+    tk = yf.Ticker(symbol);
+
     # Expiration dates
-    exps = tk.options
+    exps = tk.options[2:6]
 
     # Get options for each expiration
     options = pd.DataFrame()
     for e in exps:
         opt = tk.option_chain(e)
-        opt = pd.DataFrame().append(opt.calls).append(opt.puts)
+        p = tk.fast_info.last_price;
+        opt = pd.DataFrame().append(opt.calls)
+        opt['ticker'] = symbol;
         opt['expirationDate'] = e
-        options = options.append(opt, ignore_index=True)
-        
-  
-    # Boolean column if the option is a CALL
-    options['CALL'] = options['contractSymbol'].str[4:].apply(
-        lambda x: 1 if (x == "C") else 0)
-    
-    options[['bid', 'ask', 'strike']] = options[['bid', 'ask', 'strike']].apply(pd.to_numeric)
-    options['mark'] = (options['bid'] + options['ask']) / 2 # Calculate the midpoint of the bid-ask
-    options.drop('lastTradeDate',axis=1,inplace=True);
-    options.drop('inTheMoney',axis=1,inplace=True);
-    options.fillna(value = 0,inplace = True);
+        opt['spotPrice'] = p
+        opt.drop(columns=['change','volume','openInterest','lastTradeDate','bid','ask','inTheMoney','percentChange','currency','contractSize'],axis=1,inplace=True);
+        opt.rename(columns = {'impliedVolatility':'volatility'}, inplace = True)
+        opt.rename(columns = {'strike':'strikePrice'}, inplace = True)
+        options = options.append(opt, ignore_index=True);
+        options.fillna(value = 0,inplace = True);
   
     return options;
 
 
-symlist = ['AAPL','IBM','MSFT','GOOGL'];
+symlist = ['AAPL','AMZN','TSLA','MSFT','CSCO','META','V','PG','BAC','GOOGL'];
 
 optList = [];
 
@@ -64,17 +69,20 @@ myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/")
 db = myclient["TradeData"];
 Collection = db["Options"];
 
+#Empty the table
+
+#db.Options.delete_many({});
+
 data = [];
 data = [json.loads(line)
         for line in open(json_file, 'r', encoding='utf-8')];
 
      
-# Inserting the loaded data in the Collection
-# if JSON contains data more than one entry
-# insert_many is used else insert_one is used
 if isinstance(data, list):
     Collection.insert_many(data) 
 else:
     Collection.insert_one(data);
 
 print(Collection.name);
+
+#app.run(debug = True);
