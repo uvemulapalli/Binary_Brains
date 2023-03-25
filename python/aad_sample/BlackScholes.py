@@ -116,4 +116,4 @@ class BlackScholes:
         prices = bsPrice(spots, self.K, self.vol, self.T2 - self.T1).reshape((-1, 1))
         deltas = bsDelta(spots, self.K, self.vol, self.T2 - self.T1).reshape((-1, 1))
         vegas = bsVega(spots, self.K, self.vol, self.T2 - self.T1).reshape((-1, 1))
-        return spots, spots, prices, deltas, vegas
+        return spots, spots, prices
