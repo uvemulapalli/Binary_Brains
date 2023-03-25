@@ -87,6 +87,7 @@ def GetTrainingSetForGivenInstruments():
         # connecting to Redis cache
         print('conecting to Redis')
         r = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
+      #  r.delete(instrumentId)
         if (trainingSetExists(instrumentId, r)):
             print('training set exists')
             trainingSetDict = r.get(instrumentId)
@@ -124,7 +125,7 @@ def getRequestParam(request_data):
     strikePrice = float(request_data['strikeprice'])
     expiry = request_data['expiry']
     date_object = datetime.strptime(expiry, '%Y-%m-%d').date()
-    expiryInYears = float((date_object.month / 12) - datetime.now().month)
+    expiryInYears = float((date_object.month - datetime.now().month) / 12).__round__(1)
     spotPrice = float(request_data['spotprice'])
     volatality = float(request_data['volatility'])
 
