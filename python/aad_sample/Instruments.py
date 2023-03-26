@@ -14,7 +14,7 @@ def getSpotPrice(symbol):
   
 @app.route("/load")
 def loadOptions():
-    url = "mongodb://21af924e8e2c.mylabserver.com:8080/";
+    url = "mongodb://21af924e8e2c.mylabserver.com:8080/?connect=false";
     client = MongoClient(url);
     db = client["TradeData"];
     collection = db["Options"];
