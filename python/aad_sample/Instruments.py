@@ -1,18 +1,20 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+import requests
 import yfinance as yf;
 import pandas as pd;
 from pymongo import MongoClient;
-  
+from datetime import datetime, date
+
 app = Flask(__name__)
   
-@app.route('/spotPrice/<string:symbol>')
+@app.route('/spotPrice/<string:symbol>', methods=['GET'])
 def getSpotPrice(symbol):
     sym =  yf.Ticker(symbol);
     price = sym.fast_info.last_price;
     print(sym,price);
     return jsonify({'marketPrice': price})
   
-@app.route("/load")
+@app.route("/load" , methods=['POST'])
 def loadOptions():
     url = "mongodb://21af924e8e2c.mylabserver.com:8080/?connect=false";
     client = MongoClient(url);
@@ -48,7 +50,7 @@ def loadOptions():
     return jsonify({'Options Loaded': count})
         
 
-@app.route('/getOption', methods=['get'])
+@app.route('/getOption', methods=['GET'])
 def getInstrumentDetails():
     symbol = request.args.get('ticker', None)
     optSymbol = request.args.get('contractSymbol', None)
