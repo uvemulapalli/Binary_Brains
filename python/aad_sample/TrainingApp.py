@@ -16,7 +16,8 @@ instrumentModelMap = {}
 size = 512
 redis_host = "a8216942522c.mylabserver.com"
 redis_port = 8095
-myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/?connect=false")
+myclient = MongoClient("mongodb://21af924e8e2c.mylabserver.com:8080/?authSource=admin&readPreference=secondary&directConnection=true&ssl=false")
+
 
 @app.route('/train/PersistTrainingSetForInstruments', methods=['POST'])
 def PersistTrainingSetForInstruments():
@@ -164,4 +165,4 @@ def main():
     print(response_API.status_code)
 if __name__ == '__main__':
   #  main()
-  app.run(host='0.0.0.0', port=5000)
+  app.run(debug=true,host='0.0.0.0', port=5000)
